@@ -7,3 +7,6 @@ exclude_patterns = [
 [[analyzers]]
 name = "javascript"
 enabled = true
+    [analyzers.meta]
+        environment = ["nodejs"]
+        module_system = "es-modules"
