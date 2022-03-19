@@ -1,7 +1,6 @@
-import { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
-import { getRequest, postRequest } from "../api";
 import {
   GITHUB_API_AUTH,
   OAUTHACCESSURL,
@@ -14,6 +13,12 @@ const clientId = process.env.CLIENTID;
 const clientSecret = process.env.CLIENTSECRET;
 let token = "";
 
+const getHeaders = (): AxiosRequestConfig => {
+  return {
+    headers: { accept: "application/json", Authorization: `token ${token}` }
+  };
+};
+
 router.get("/home", (req: Request, res: Response) => {
   res.json({ msg: "Hello from the TypeScript world!" });
 });
@@ -23,35 +28,29 @@ router.get("/login", (req: Request, res: Response) => {
   res.redirect(url);
 });
 
-router.get("/callback", (req: Request, res: Response) => {
+router.get("/callback", async (req: Request, res: Response) => {
   const body = {
     client_id: clientId,
     client_secret: clientSecret,
     code: req.query.code
   };
   const opts = { headers: { accept: "application/json" } };
-  const response: any = postRequest(OAUTHACCESSURL, body, opts);
-  if (response) {
+  try {
+    const response = (await axios.post(OAUTHACCESSURL, body, opts)).data;
     token = response["access_token"];
     res.json({ token });
-  } else {
+  } catch (error) {
     res.status(500).json({ message: "Error" });
   }
 });
 
 router.get("/user", async (req: Request, res: Response) => {
-  const response = await getRequest(USERAPIENDPOINT, getHeaders());
+  const response = (await axios.get(USERAPIENDPOINT, getHeaders())).data;
   if (response) {
     res.json(response);
   } else {
     res.status(500).json({ message: "Error" });
   }
 });
-
-const getHeaders = (): AxiosRequestConfig => {
-  return {
-    headers: { accept: "application/json", Authorization: `token ${token}` }
-  };
-};
 
 export default router;
